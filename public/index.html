@@ -46,6 +46,7 @@
 
     <script>
         const socket = io();
+        socket.emit("join-game", { name: playerName });
         let startTime;
 
         const textContainer = document.getElementById("text-container");
@@ -92,6 +93,12 @@
                 })
                 .join(" ");
         }
+
+        let playerName = prompt("Enter your name:");
+        if (!playerName) {
+            playerName = "Anonymous"; // Default name if left blank
+        }
+        
     </script>
 </body>
 </html>
