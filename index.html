@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typeracer Multiplayer</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+        #text-container {
+            width: 80%;
+            margin: 20px auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 10px;
+            font-size: 1.2em;
+            text-align: left;
+            line-height: 1.5;
+        }
+        .highlight { color: red; }
+        textarea {
+            width: 80%;
+            height: 100px;
+            margin-top: 20px;
+            font-size: 1em;
+            padding: 10px;
+        }
+        #leaderboard {
+            margin-top: 20px;
+            padding: 20px;
+            background: #fff;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Typeracer Multiplayer</h1>
+    <div id="text-container">Loading...</div>
+    <textarea id="input" placeholder="Start typing..." disabled></textarea>
+    <div id="leaderboard"></div>
+
+    <script>
+        const socket = io();
+        let startTime;
+
+        const textContainer = document.getElementById("text-container");
+        const inputField = document.getElementById("input");
+        const leaderboard = document.getElementById("leaderboard");
+        let snippet = "";
+
+        socket.on("snippet", (text) => {
+            snippet = text;
+            textContainer.textContent = snippet;
+            inputField.disabled = false;
+            inputField.focus();
+            startTime = new Date();
+        });
+
+        socket.on("players", (players) => {
+            leaderboard.innerHTML = "<h2>Leaderboard</h2>";
+            for (const [id, data] of Object.entries(players)) {
+                const progress = Math.round(data.progress * 100);
+                leaderboard.innerHTML += `<p>Player ${id}: ${progress}% | WPM: ${data.wpm}</p>`;
+            }
+        });
+
+        inputField.addEventListener("input", () => {
+            const typedText = inputField.value;
+            const timeElapsed = (new Date() - startTime) / 60000; // Minutes
+            const highlighted = highlightErrors(snippet, typedText);
+
+            textContainer.innerHTML = highlighted;
+
+            socket.emit("typing", {
+                typedText,
+                timeElapsed,
+            });
+        });
+
+        function highlightErrors(snippet, typedText) {
+            const snippetWords = snippet.split(" ");
+            const typedWords = typedText.split(" ");
+            return snippetWords
+                .map((word, i) => {
+                    if (typedWords[i] === undefined) return word;
+                    return word === typedWords[i] ? word : `<span class="highlight">${word}</span>`;
+                })
+                .join(" ");
+        }
+    </script>
+</body>
+</html>
