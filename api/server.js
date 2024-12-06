@@ -18,11 +18,13 @@ const textSnippets = [
     "Programming isn't about what you know; it's about what you can figure out.",
     "Code is like humor. When you have to explain it, it’s bad.",
 ];
-
+const players = {};
 io.on("connection", (socket) => {
     console.log(`Player connected: ${socket.id}`);
-    players[socket.id] = { progress: 0, wpm: 0, completed: false };
-
+    socket.on("join-game", (data) => {
+        players[socket.id] = data.name; // Store player name with their socket ID
+        console.log(`${data.name} joined the game!`);
+    });
     // Send current snippet and player list to the new player
     socket.emit("snippet", snippet || (snippet = textSnippets[Math.floor(Math.random() * textSnippets.length)]));
     io.emit("players", players);
@@ -41,7 +43,7 @@ io.on("connection", (socket) => {
     });
 
     socket.on("disconnect", () => {
-        console.log(`Player disconnected: ${socket.id}`);
+        console.log(`${players[socket.id]} left the game.`);
         delete players[socket.id];
         io.emit("players", players);
     });
